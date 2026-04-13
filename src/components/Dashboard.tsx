@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import { Trophy, Star, Zap, Clock, ArrowUpRight } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
-  const { courses, projects, activities, user } = useApp();
+  const { courses, projects, activities, user, accentColor } = useApp();
   const { profile } = useAuth();
 
   if (!profile) return null;
@@ -40,12 +40,12 @@ export const Dashboard: React.FC = () => {
     <div className="p-8 space-y-8 overflow-y-auto h-full">
       <header className="flex justify-between items-end">
         <div>
-          <h1 className="text-4xl font-bold mb-2">Bentornato, <span className="gradient-text">{profile.name}</span></h1>
+          <h1 className="text-4xl font-bold mb-2">Bentornato, <span className="gradient-text" style={{ backgroundImage: `linear-gradient(to right, ${accentColor}, #BF00FF)` }}>{profile.name}</span></h1>
           <p className="text-white/60">Hai completato {completedTasks} task questa settimana. Ottimo lavoro!</p>
         </div>
         <div className="flex gap-4">
-          <div className="glass-card flex items-center gap-3 py-2 px-4 border-electric-blue/20">
-            <div className="w-8 h-8 rounded-lg bg-electric-blue/20 flex items-center justify-center text-electric-blue">
+          <div className="glass-card flex items-center gap-3 py-2 px-4 border-electric-blue/20" style={{ borderColor: `${accentColor}33` }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${accentColor}33`, color: accentColor }}>
               <Zap size={18} />
             </div>
             <div>
@@ -73,7 +73,7 @@ export const Dashboard: React.FC = () => {
           className="glass-card lg:col-span-1"
         >
           <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-            <Trophy className="text-electric-blue" size={20} />
+            <Trophy className="text-electric-blue" size={20} style={{ color: accentColor }} />
             Skill Radar
           </h3>
           <div className="h-[300px] w-full">
@@ -84,8 +84,8 @@ export const Dashboard: React.FC = () => {
                 <Radar
                   name="Skills"
                   dataKey="A"
-                  stroke="#00D1FF"
-                  fill="#00D1FF"
+                  stroke={accentColor}
+                  fill={accentColor}
                   fillOpacity={0.3}
                 />
               </RadarChart>
@@ -108,14 +108,15 @@ export const Dashboard: React.FC = () => {
             {courses.map((course) => (
               <div key={course.id} className="group cursor-pointer">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="font-medium group-hover:text-electric-blue transition-colors">{course.title}</span>
+                  <span className="font-medium group-hover:text-electric-blue transition-colors" style={{ '--hover-color': accentColor } as any}>{course.title}</span>
                   <span className="text-sm text-white/40">{course.progress}%</span>
                 </div>
                 <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${course.progress}%` }}
-                    className="h-full bg-gradient-to-r from-electric-blue to-vivid-purple"
+                    className="h-full bg-gradient-to-r"
+                    style={{ backgroundImage: `linear-gradient(to right, ${accentColor}, #BF00FF)` }}
                   />
                 </div>
               </div>

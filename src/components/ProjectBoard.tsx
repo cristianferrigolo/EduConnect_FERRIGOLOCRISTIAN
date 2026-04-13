@@ -9,19 +9,24 @@ import {
   Circle,
   Clock,
   Layout,
-  GanttChart
+  GanttChart,
+  ArrowRight,
+  X,
+  Calendar as CalendarIcon,
+  Users
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Task } from '../types';
 import { cn } from '../lib/utils';
 
 export const ProjectBoard: React.FC = () => {
-  const { projects, addTask, updateTaskStatus } = useApp();
+  const { projects, addTask, updateTaskStatus, accentColor } = useApp();
   const [activeProjectId, setActiveProjectId] = useState<string>(projects[0].id);
   const activeProject = projects.find(p => p.id === activeProjectId) || projects[0];
   const [view, setView] = useState<'kanban' | 'gantt'>('kanban');
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [showNewTask, setShowNewTask] = useState(false);
+  const [showProjectDetails, setShowProjectDetails] = useState(false);
 
   const columns = [
     { id: 'todo', title: 'Da Fare', icon: Circle, color: 'text-white/40' },
@@ -49,9 +54,15 @@ export const ProjectBoard: React.FC = () => {
     <div className="p-8 h-full flex flex-col">
       <header className="mb-8 flex justify-between items-center">
         <div className="flex items-center gap-6">
-          <div>
-            <h2 className="text-3xl font-bold mb-2">{activeProject.title}</h2>
-            <p className="text-white/60">{activeProject.description}</p>
+          <div 
+            className="cursor-pointer group"
+            onClick={() => setShowProjectDetails(true)}
+          >
+            <h2 className="text-3xl font-bold mb-2 group-hover:text-electric-blue transition-colors flex items-center gap-2" style={{ color: showProjectDetails ? accentColor : '' }}>
+              {activeProject.title}
+              <ArrowRight size={20} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+            </h2>
+            <p className="text-white/60 line-clamp-1 max-w-md">{activeProject.description}</p>
           </div>
           <div className="h-12 w-px bg-white/10 mx-2" />
           <div className="flex gap-2">
@@ -61,8 +72,9 @@ export const ProjectBoard: React.FC = () => {
                 onClick={() => setActiveProjectId(p.id)}
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
-                  activeProject.id === p.id ? "bg-electric-blue text-white" : "glass-panel text-white/40 hover:text-white"
+                  activeProject.id === p.id ? "bg-electric-blue text-white shadow-lg" : "glass-panel text-white/40 hover:text-white"
                 )}
+                style={activeProject.id === p.id ? { backgroundColor: accentColor } : {}}
               >
                 {p.title.split(' ')[0]}
               </button>
@@ -234,6 +246,90 @@ export const ProjectBoard: React.FC = () => {
               ))}
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Project Details Modal */}
+      <AnimatePresence>
+        {showProjectDetails && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowProjectDetails(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl glass-card p-8 shadow-2xl overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-64 h-64 bg-electric-blue/10 blur-3xl -translate-y-1/2 translate-x-1/2" />
+              
+              <div className="flex justify-between items-start mb-8 relative">
+                <div>
+                  <h2 className="text-3xl font-bold mb-2" style={{ color: accentColor }}>{activeProject.title}</h2>
+                  <div className="flex gap-4 text-sm text-white/40">
+                    <span className="flex items-center gap-1"><CalendarIcon size={14} /> {activeProject.startDate} - {activeProject.endDate}</span>
+                    <span className="flex items-center gap-1"><Users size={14} /> {activeProject.members.length} Membri</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowProjectDetails(false)}
+                  className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="space-y-6 relative">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-2">Descrizione Dettagliata</h3>
+                  <p className="text-white/80 leading-relaxed">
+                    {activeProject.description} Questo progetto mira a fornire una soluzione completa e innovativa nel campo accademico. 
+                    Attraverso la collaborazione e l'uso di tecnologie all'avanguardia, puntiamo a raggiungere risultati eccellenti 
+                    entro le scadenze prefissate.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                    <h4 className="text-[10px] font-bold uppercase text-white/40 mb-1">Stato Avanzamento</h4>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-electric-blue" 
+                          style={{ 
+                            width: `${(activeProject.tasks.filter(t => t.status === 'done').length / activeProject.tasks.length) * 100}%`,
+                            backgroundColor: accentColor
+                          }} 
+                        />
+                      </div>
+                      <span className="text-xs font-bold">
+                        {Math.round((activeProject.tasks.filter(t => t.status === 'done').length / activeProject.tasks.length) * 100)}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                    <h4 className="text-[10px] font-bold uppercase text-white/40 mb-1">Task Totali</h4>
+                    <p className="text-xl font-bold">{activeProject.tasks.length}</p>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button 
+                    onClick={() => setShowProjectDetails(false)}
+                    className="btn-primary w-full py-3"
+                    style={{ backgroundColor: accentColor }}
+                  >
+                    Chiudi Dettagli
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

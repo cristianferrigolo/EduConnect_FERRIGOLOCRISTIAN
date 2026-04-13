@@ -8,6 +8,10 @@ interface AppState {
   activities: Activity[];
   isDeepWorkMode: boolean;
   searchQuery: string;
+  language: 'it' | 'en';
+  accentColor: string;
+  setLanguage: (lang: 'it' | 'en') => void;
+  setAccentColor: (color: string) => void;
   setSearchQuery: (query: string) => void;
   setDeepWorkMode: (val: boolean) => void;
   updateXP: (amount: number) => void;
@@ -159,6 +163,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isDeepWorkMode, setDeepWorkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [language, setLanguage] = useState<'it' | 'en'>('it');
+  const [accentColor, setAccentColor] = useState('#00D1FF');
 
   useEffect(() => {
     localStorage.setItem('edu_user', JSON.stringify(user));
@@ -269,6 +275,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       activities, 
       isDeepWorkMode, 
       searchQuery,
+      language,
+      accentColor,
+      setLanguage,
+      setAccentColor,
       setSearchQuery,
       setDeepWorkMode,
       updateXP,
