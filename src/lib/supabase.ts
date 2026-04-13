@@ -1,7 +1,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+// Use import.meta.env for standard Vite compatibility (works better on Vercel)
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string) || (process.env.VITE_SUPABASE_URL as string) || '';
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || (process.env.VITE_SUPABASE_ANON_KEY as string) || '';
 
 let supabaseInstance: SupabaseClient | null = null;
 

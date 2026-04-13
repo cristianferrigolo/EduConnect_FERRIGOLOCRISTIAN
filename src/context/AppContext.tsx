@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Course, Project, Activity } from '../types';
+import { User, Course, Project, Activity, Task, Note } from '../types';
 
 interface AppState {
   user: User;
@@ -7,9 +7,17 @@ interface AppState {
   projects: Project[];
   activities: Activity[];
   isDeepWorkMode: boolean;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
   setDeepWorkMode: (val: boolean) => void;
   updateXP: (amount: number) => void;
   addActivity: (action: string) => void;
+  addProject: (project: Omit<Project, 'id'>) => void;
+  addTask: (projectId: string, task: Omit<Task, 'id'>) => void;
+  updateTaskStatus: (projectId: string, taskId: string, status: Task['status']) => void;
+  addNote: (courseId: string, note: Omit<Note, 'id'>) => void;
+  deleteNote: (courseId: string, noteId: string) => void;
+  updateCourseProgress: (courseId: string, progress: number) => void;
 }
 
 const DEFAULT_USER: User = {
@@ -53,6 +61,42 @@ const INITIAL_COURSES: Course[] = [
     progress: 20,
     notes: [],
   },
+  {
+    id: 'c3',
+    title: 'Cyber Security Fundamentals',
+    instructor: 'Ing. Verdi',
+    thumbnail: 'https://picsum.photos/seed/security/800/450',
+    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    progress: 45,
+    notes: [],
+  },
+  {
+    id: 'c4',
+    title: 'Data Science con Python',
+    instructor: 'Dott.ssa Rosa',
+    thumbnail: 'https://picsum.photos/seed/datascience/800/450',
+    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    progress: 10,
+    notes: [],
+  },
+  {
+    id: 'c5',
+    title: 'UI/UX Design Moderno',
+    instructor: 'Arch. Grigio',
+    thumbnail: 'https://picsum.photos/seed/design/800/450',
+    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    progress: 90,
+    notes: [],
+  },
+  {
+    id: 'c6',
+    title: 'Blockchain & Smart Contracts',
+    instructor: 'Prof. Oro',
+    thumbnail: 'https://picsum.photos/seed/blockchain/800/450',
+    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    progress: 5,
+    notes: [],
+  },
 ];
 
 const INITIAL_PROJECTS: Project[] = [
@@ -67,6 +111,29 @@ const INITIAL_PROJECTS: Project[] = [
       { id: 't1', title: 'Revisione Letteratura', status: 'done', priority: 'high' },
       { id: 't2', title: 'Simulazione Qiskit', status: 'in-progress', priority: 'medium' },
       { id: 't3', title: 'Stesura Report', status: 'todo', priority: 'low' },
+    ],
+  },
+  {
+    id: 'p2',
+    title: 'Sviluppo App Mobile Edu',
+    description: 'Creazione di un\'app per lo studio collaborativo.',
+    startDate: '2024-02-15',
+    endDate: '2024-08-15',
+    members: ['1', '3', '4'],
+    tasks: [
+      { id: 't4', title: 'Wireframing', status: 'done', priority: 'high' },
+      { id: 't5', title: 'Setup Firebase', status: 'todo', priority: 'medium' },
+    ],
+  },
+  {
+    id: 'p3',
+    title: 'Analisi Dati Ambientali',
+    description: 'Monitoraggio sensori IoT in tempo reale.',
+    startDate: '2024-03-01',
+    endDate: '2024-12-31',
+    members: ['1', '5'],
+    tasks: [
+      { id: 't6', title: 'Raccolta Dati', status: 'in-progress', priority: 'high' },
     ],
   },
 ];
@@ -91,6 +158,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isDeepWorkMode, setDeepWorkMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     localStorage.setItem('edu_user', JSON.stringify(user));
@@ -122,6 +190,77 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActivities(prev => [newActivity, ...prev].slice(0, 20));
   };
 
+  const addProject = (project: Omit<Project, 'id'>) => {
+    const newProject: Project = {
+      ...project,
+      id: Math.random().toString(36).substr(2, 9)
+    };
+    setProjects(prev => [...prev, newProject]);
+    addActivity(`ha creato il progetto "${project.title}"`);
+    updateXP(100);
+  };
+
+  const addTask = (projectId: string, task: Omit<Task, 'id'>) => {
+    setProjects(prev => prev.map(p => {
+      if (p.id === projectId) {
+        return {
+          ...p,
+          tasks: [...p.tasks, { ...task, id: Math.random().toString(36).substr(2, 9) }]
+        };
+      }
+      return p;
+    }));
+    addActivity(`ha aggiunto un task al progetto`);
+    updateXP(20);
+  };
+
+  const updateTaskStatus = (projectId: string, taskId: string, status: Task['status']) => {
+    setProjects(prev => prev.map(p => {
+      if (p.id === projectId) {
+        return {
+          ...p,
+          tasks: p.tasks.map(t => t.id === taskId ? { ...t, status } : t)
+        };
+      }
+      return p;
+    }));
+    if (status === 'done') updateXP(50);
+  };
+
+  const addNote = (courseId: string, note: Omit<Note, 'id'>) => {
+    setCourses(prev => prev.map(c => {
+      if (c.id === courseId) {
+        return {
+          ...c,
+          notes: [...c.notes, { ...note, id: Math.random().toString(36).substr(2, 9) }]
+        };
+      }
+      return c;
+    }));
+    updateXP(10);
+  };
+
+  const deleteNote = (courseId: string, noteId: string) => {
+    setCourses(prev => prev.map(c => {
+      if (c.id === courseId) {
+        return {
+          ...c,
+          notes: c.notes.filter(n => n.id !== noteId)
+        };
+      }
+      return c;
+    }));
+  };
+
+  const updateCourseProgress = (courseId: string, progress: number) => {
+    setCourses(prev => prev.map(c => {
+      if (c.id === courseId) {
+        return { ...c, progress };
+      }
+      return c;
+    }));
+  };
+
   return (
     <AppContext.Provider value={{ 
       user, 
@@ -129,9 +268,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       projects, 
       activities, 
       isDeepWorkMode, 
+      searchQuery,
+      setSearchQuery,
       setDeepWorkMode,
       updateXP,
-      addActivity
+      addActivity,
+      addProject,
+      addTask,
+      updateTaskStatus,
+      addNote,
+      deleteNote,
+      updateCourseProgress
     }}>
       {children}
     </AppContext.Provider>

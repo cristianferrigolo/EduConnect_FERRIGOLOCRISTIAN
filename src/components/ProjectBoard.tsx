@@ -16,23 +16,58 @@ import { Task } from '../types';
 import { cn } from '../lib/utils';
 
 export const ProjectBoard: React.FC = () => {
-  const { projects } = useApp();
-  const activeProject = projects[0];
-  const [tasks, setTasks] = useState<Task[]>(activeProject.tasks);
+  const { projects, addTask, updateTaskStatus } = useApp();
+  const [activeProjectId, setActiveProjectId] = useState<string>(projects[0].id);
+  const activeProject = projects.find(p => p.id === activeProjectId) || projects[0];
   const [view, setView] = useState<'kanban' | 'gantt'>('kanban');
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [showNewTask, setShowNewTask] = useState(false);
 
   const columns = [
     { id: 'todo', title: 'Da Fare', icon: Circle, color: 'text-white/40' },
     { id: 'in-progress', title: 'In Corso', icon: Clock, color: 'text-electric-blue' },
     { id: 'done', title: 'Completato', icon: CheckCircle2, color: 'text-green-400' },
-  ];
+  ] as const;
+
+  const handleAddTask = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTaskTitle.trim()) return;
+    addTask(activeProject.id, {
+      title: newTaskTitle,
+      status: 'todo',
+      priority: 'medium'
+    });
+    setNewTaskTitle('');
+    setShowNewTask(false);
+  };
+
+  const handleStatusChange = (taskId: string, status: Task['status']) => {
+    updateTaskStatus(activeProject.id, taskId, status);
+  };
 
   return (
     <div className="p-8 h-full flex flex-col">
       <header className="mb-8 flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold mb-2">{activeProject.title}</h2>
-          <p className="text-white/60">{activeProject.description}</p>
+        <div className="flex items-center gap-6">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">{activeProject.title}</h2>
+            <p className="text-white/60">{activeProject.description}</p>
+          </div>
+          <div className="h-12 w-px bg-white/10 mx-2" />
+          <div className="flex gap-2">
+            {projects.map(p => (
+              <button
+                key={p.id}
+                onClick={() => setActiveProjectId(p.id)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
+                  activeProject.id === p.id ? "bg-electric-blue text-white" : "glass-panel text-white/40 hover:text-white"
+                )}
+              >
+                {p.title.split(' ')[0]}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="flex gap-4">
           <div className="glass-panel p-1 rounded-xl flex">
@@ -49,7 +84,10 @@ export const ProjectBoard: React.FC = () => {
               <GanttChart size={20} />
             </button>
           </div>
-          <button className="btn-primary flex items-center gap-2">
+          <button 
+            onClick={() => setShowNewTask(true)}
+            className="btn-primary flex items-center gap-2"
+          >
             <Plus size={20} /> Nuovo Task
           </button>
         </div>
@@ -71,7 +109,7 @@ export const ProjectBoard: React.FC = () => {
                     <col.icon className={col.color} size={18} />
                     <h3 className="font-bold uppercase tracking-wider text-sm">{col.title}</h3>
                     <span className="bg-white/5 px-2 py-0.5 rounded text-xs text-white/40">
-                      {tasks.filter(t => t.status === col.id).length}
+                      {activeProject.tasks.filter(t => t.status === col.id).length}
                     </span>
                   </div>
                   <button className="text-white/20 hover:text-white">
@@ -80,11 +118,15 @@ export const ProjectBoard: React.FC = () => {
                 </div>
 
                 <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
-                  {tasks.filter(t => t.status === col.id).map((task) => (
+                  {activeProject.tasks.filter(t => t.status === col.id).map((task) => (
                     <motion.div
                       layout
                       key={task.id}
-                      className="glass-card p-4 hover:border-white/20 cursor-grab active:cursor-grabbing group"
+                      className="glass-card p-4 hover:border-white/20 cursor-pointer group"
+                      onClick={() => {
+                        const nextStatus = col.id === 'todo' ? 'in-progress' : col.id === 'in-progress' ? 'done' : 'todo';
+                        handleStatusChange(task.id, nextStatus);
+                      }}
                     >
                       <div className="flex justify-between items-start mb-3">
                         <span className={cn(
@@ -114,9 +156,43 @@ export const ProjectBoard: React.FC = () => {
                     </motion.div>
                   ))}
                   
-                  <button className="w-full py-3 rounded-xl border border-dashed border-white/10 text-white/20 hover:text-white hover:border-white/20 transition-all text-sm">
-                    + Aggiungi Task
-                  </button>
+                  {col.id === 'todo' && (
+                    <div className="space-y-4">
+                      {showNewTask ? (
+                        <form onSubmit={handleAddTask} className="glass-card p-4 border-electric-blue/30">
+                          <input
+                            autoFocus
+                            value={newTaskTitle}
+                            onChange={(e) => setNewTaskTitle(e.target.value)}
+                            placeholder="Cosa devi fare?"
+                            className="w-full bg-transparent border-none text-sm focus:outline-none mb-4"
+                          />
+                          <div className="flex justify-end gap-2">
+                            <button 
+                              type="button"
+                              onClick={() => setShowNewTask(false)}
+                              className="px-3 py-1 text-xs text-white/40 hover:text-white"
+                            >
+                              Annulla
+                            </button>
+                            <button 
+                              type="submit"
+                              className="px-3 py-1 text-xs bg-electric-blue rounded-lg text-white"
+                            >
+                              Salva
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <button 
+                          onClick={() => setShowNewTask(true)}
+                          className="w-full py-3 rounded-xl border border-dashed border-white/10 text-white/20 hover:text-white hover:border-white/20 transition-all text-sm"
+                        >
+                          + Aggiungi Task
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -138,7 +214,7 @@ export const ProjectBoard: React.FC = () => {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar">
-              {tasks.map((task, i) => (
+              {activeProject.tasks.map((task, i) => (
                 <div key={task.id} className="flex border-b border-white/5 hover:bg-white/5 transition-colors">
                   <div className="w-64 p-4 border-r border-white/10 text-sm font-medium truncate">{task.title}</div>
                   <div className="flex-1 relative p-4">

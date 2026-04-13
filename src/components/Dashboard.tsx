@@ -12,43 +12,54 @@ import { useAuth } from '../context/AuthContext';
 import { Trophy, Star, Zap, Clock, ArrowUpRight } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
-  const { courses, activities } = useApp();
+  const { courses, projects, activities, user } = useApp();
   const { profile } = useAuth();
 
   if (!profile) return null;
 
+  // Calculate dynamic skills based on course progress
+  const calculateSkill = (category: string, base: number) => {
+    const relevantCourses = courses.filter(c => c.title.toLowerCase().includes(category.toLowerCase()));
+    if (relevantCourses.length === 0) return base;
+    const avgProgress = relevantCourses.reduce((acc, curr) => acc + curr.progress, 0) / relevantCourses.length;
+    return Math.min(100, Math.round(base + (avgProgress / 5)));
+  };
+
   const radarData = [
-    { subject: 'Programmazione', A: profile.skills.programming, fullMark: 100 },
-    { subject: 'Design', A: profile.skills.design, fullMark: 100 },
-    { subject: 'Ricerca', A: profile.skills.research, fullMark: 100 },
-    { subject: 'Comunicazione', A: profile.skills.communication, fullMark: 100 },
-    { subject: 'Management', A: profile.skills.management, fullMark: 100 },
+    { subject: 'Programmazione', A: calculateSkill('Web', user.skills.programming), fullMark: 100 },
+    { subject: 'Design', A: calculateSkill('Design', user.skills.design), fullMark: 100 },
+    { subject: 'Ricerca', A: calculateSkill('Science', user.skills.research), fullMark: 100 },
+    { subject: 'Comunicazione', A: calculateSkill('Comm', user.skills.communication), fullMark: 100 },
+    { subject: 'Management', A: calculateSkill('Management', user.skills.management), fullMark: 100 },
   ];
+
+  const totalProgress = courses.reduce((acc, curr) => acc + curr.progress, 0);
+  const completedTasks = projects.reduce((acc, curr) => acc + curr.tasks.filter(t => t.status === 'done').length, 0);
 
   return (
     <div className="p-8 space-y-8 overflow-y-auto h-full">
       <header className="flex justify-between items-end">
         <div>
           <h1 className="text-4xl font-bold mb-2">Bentornato, <span className="gradient-text">{profile.name}</span></h1>
-          <p className="text-white/60">Ecco cosa è successo mentre eri via.</p>
+          <p className="text-white/60">Hai completato {completedTasks} task questa settimana. Ottimo lavoro!</p>
         </div>
         <div className="flex gap-4">
-          <div className="glass-card flex items-center gap-3 py-2 px-4">
+          <div className="glass-card flex items-center gap-3 py-2 px-4 border-electric-blue/20">
             <div className="w-8 h-8 rounded-lg bg-electric-blue/20 flex items-center justify-center text-electric-blue">
               <Zap size={18} />
             </div>
             <div>
               <p className="text-xs text-white/40 uppercase font-bold">Livello</p>
-              <p className="font-bold">{profile.level}</p>
+              <p className="font-bold">{user.level}</p>
             </div>
           </div>
-          <div className="glass-card flex items-center gap-3 py-2 px-4">
+          <div className="glass-card flex items-center gap-3 py-2 px-4 border-vivid-purple/20">
             <div className="w-8 h-8 rounded-lg bg-vivid-purple/20 flex items-center justify-center text-vivid-purple">
               <Star size={18} />
             </div>
             <div>
               <p className="text-xs text-white/40 uppercase font-bold">XP Totali</p>
-              <p className="font-bold">{profile.xp}</p>
+              <p className="font-bold">{user.xp}</p>
             </div>
           </div>
         </div>

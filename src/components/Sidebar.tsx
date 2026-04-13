@@ -23,6 +23,7 @@ interface SidebarProps {
 
 const menuItems = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { id: 'search', icon: Search, label: 'Cerca' },
   { id: 'courses', icon: BookOpen, label: 'Corsi' },
   { id: 'research', icon: Search, label: 'Ricerca' },
   { id: 'projects', icon: LayoutDashboard, label: 'Progetti' },
@@ -93,7 +94,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
       </nav>
 
       <div className="p-4 space-y-2">
-        <button className="w-full flex items-center gap-4 p-3 rounded-xl text-white/60 hover:bg-white/5 hover:text-white transition-all">
+        <button 
+          onClick={() => setActiveTab('settings')}
+          className={cn(
+            "w-full flex items-center gap-4 p-3 rounded-xl transition-all",
+            activeTab === 'settings' ? "bg-white/10 text-electric-blue" : "text-white/60 hover:bg-white/5 hover:text-white"
+          )}
+        >
           <Settings size={22} />
           {!isCollapsed && <span>Impostazioni</span>}
         </button>

@@ -14,8 +14,9 @@ import { useApp } from '../context/AppContext';
 import { Course, Note } from '../types';
 
 export const CoursePlayer: React.FC = () => {
-  const { courses, addActivity } = useApp();
-  const [activeCourse, setActiveCourse] = useState<Course>(courses[0]);
+  const { courses, addActivity, addNote: addNoteToContext, deleteNote: deleteNoteFromContext } = useApp();
+  const [activeCourseId, setActiveCourseId] = useState<string>(courses[0].id);
+  const activeCourse = courses.find(c => c.id === activeCourseId) || courses[0];
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -35,17 +36,18 @@ export const CoursePlayer: React.FC = () => {
     }
   };
 
-  const addNote = () => {
+  const handleAddNote = () => {
     if (!noteText.trim()) return;
-    const newNote: Note = {
-      id: Math.random().toString(36).substr(2, 9),
+    addNoteToContext(activeCourse.id, {
       timestamp: currentTime,
       content: noteText,
-    };
-    // In a real app, we'd update the course object in context
-    activeCourse.notes.push(newNote);
+    });
     setNoteText('');
     addActivity(`ha aggiunto una nota al corso "${activeCourse.title}"`);
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    deleteNoteFromContext(activeCourse.id, noteId);
   };
 
   const formatTime = (seconds: number) => {
@@ -98,7 +100,7 @@ export const CoursePlayer: React.FC = () => {
             {courses.map(c => (
               <button 
                 key={c.id}
-                onClick={() => setActiveCourse(c)}
+                onClick={() => setActiveCourseId(c.id)}
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeCourse.id === c.id ? 'bg-electric-blue text-white' : 'glass-panel text-white/60 hover:text-white'}`}
               >
                 {c.title.split(' ')[0]}
@@ -132,7 +134,10 @@ export const CoursePlayer: React.FC = () => {
                 >
                   {formatTime(note.timestamp)}
                 </button>
-                <button className="text-white/20 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                  onClick={() => handleDeleteNote(note.id)}
+                  className="text-white/20 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -150,7 +155,7 @@ export const CoursePlayer: React.FC = () => {
               className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm focus:outline-none focus:border-electric-blue/50 resize-none h-24"
             />
             <button 
-              onClick={addNote}
+              onClick={handleAddNote}
               className="absolute bottom-4 right-4 w-8 h-8 rounded-lg bg-electric-blue flex items-center justify-center text-white hover:scale-110 transition-transform"
             >
               <Plus size={18} />

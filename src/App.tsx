@@ -12,6 +12,8 @@ import { Calendar } from './components/Calendar';
 import { Pomodoro } from './components/Pomodoro';
 import { AdminPanel } from './components/AdminPanel';
 import { EduAssist } from './components/EduAssist';
+import { Settings } from './components/Settings';
+import { SearchMenu } from './components/SearchMenu';
 import { cn } from './lib/utils';
 
 const AppContent: React.FC = () => {
@@ -21,12 +23,14 @@ const AppContent: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard />;
+      case 'search': return <SearchMenu />;
       case 'courses': return <CoursePlayer />;
       case 'research': return <ResearchHub />;
       case 'projects': return <ProjectBoard />;
       case 'calendar': return <Calendar />;
       case 'pomodoro': return <Pomodoro />;
       case 'admin': return <AdminPanel />;
+      case 'settings': return <Settings />;
       default: return <Dashboard />;
     }
   };
