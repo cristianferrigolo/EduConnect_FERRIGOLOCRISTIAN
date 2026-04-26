@@ -116,26 +116,6 @@ export const Calendar: React.FC = () => {
                     <option value="deadline" className="bg-slate-900">Scadenza</option>
                   </select>
                 </div>
-                <div>
-                  <label className="text-xs text-white/40 uppercase font-bold mb-2 block">Data Evento</label>
-                  <input
-                    type="date"
-                    value={newEventDate}
-                    onChange={(e) => setNewEventDate(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-electric-blue/50 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-white/40 uppercase font-bold mb-2 block">Tipo Evento</label>
-                  <select
-                    value={newEventType}
-                    onChange={(e) => setNewEventType(e.target.value as 'exam' | 'deadline')}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-electric-blue/50 text-white"
-                  >
-                    <option value="exam" className="bg-slate-900">Esame</option>
-                    <option value="deadline" className="bg-slate-900">Scadenza</option>
-                  </select>
-                </div>
                 <div className="flex gap-3 pt-4">
                   <button 
                     type="button"
