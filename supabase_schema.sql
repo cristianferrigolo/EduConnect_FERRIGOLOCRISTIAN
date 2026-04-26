@@ -1,7 +1,10 @@
 -- SQL Schema for EduConnect Supabase Database
 
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- 1. Profiles Table
-CREATE TABLE profiles (
+CREATE TABLE IF NOT EXISTS profiles (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
   name TEXT,
   email TEXT,
@@ -13,7 +16,7 @@ CREATE TABLE profiles (
 );
 
 -- 2. Courses Table
-CREATE TABLE courses (
+CREATE TABLE IF NOT EXISTS courses (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   title TEXT NOT NULL,
   instructor TEXT,
@@ -23,7 +26,7 @@ CREATE TABLE courses (
 );
 
 -- 3. Enrollments Table
-CREATE TABLE enrollments (
+CREATE TABLE IF NOT EXISTS enrollments (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES auth.users ON DELETE CASCADE,
   course_id UUID REFERENCES courses ON DELETE CASCADE,
@@ -33,7 +36,7 @@ CREATE TABLE enrollments (
 );
 
 -- 4. Notes Table
-CREATE TABLE notes (
+CREATE TABLE IF NOT EXISTS notes (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id UUID REFERENCES auth.users ON DELETE CASCADE,
   course_id UUID REFERENCES courses ON DELETE CASCADE,
@@ -43,7 +46,7 @@ CREATE TABLE notes (
 );
 
 -- 5. Projects Table
-CREATE TABLE projects (
+CREATE TABLE IF NOT EXISTS projects (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   title TEXT NOT NULL,
   description TEXT,
@@ -54,7 +57,7 @@ CREATE TABLE projects (
 );
 
 -- 6. Tasks Table
-CREATE TABLE tasks (
+CREATE TABLE IF NOT EXISTS tasks (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   project_id UUID REFERENCES projects ON DELETE CASCADE,
   title TEXT NOT NULL,
@@ -64,24 +67,38 @@ CREATE TABLE tasks (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
 );
 
--- RLS (Row Level Security) - Basic Examples
+-- RLS (Row Level Security)
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public profiles are viewable by everyone." ON profiles FOR SELECT USING (true);
-CREATE POLICY "Users can update own profile." ON profiles FOR UPDATE USING (auth.uid() = id);
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public profiles are viewable by everyone.') THEN
+    CREATE POLICY "Public profiles are viewable by everyone." ON profiles FOR SELECT USING (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update own profile.') THEN
+    CREATE POLICY "Users can update own profile." ON profiles FOR UPDATE USING (auth.uid() = id);
+  END IF;
+END $$;
 
 ALTER TABLE enrollments ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can see own enrollments." ON enrollments FOR SELECT USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can see own enrollments.') THEN
+    CREATE POLICY "Users can see own enrollments." ON enrollments FOR SELECT USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Trigger for new user profile
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.profiles (id, name, email)
-  VALUES (new.id, new.raw_user_meta_data->>'name', new.email);
+  VALUES (new.id, new.raw_user_meta_data->>'name', new.email)
+  ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
